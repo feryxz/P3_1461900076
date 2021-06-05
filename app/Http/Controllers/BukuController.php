@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Buku;
+use App\Models\JenisBuku;
+use App\Models\RakBuku;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +17,10 @@ class BukuController extends Controller
      */
     public function index()
     {
-        $buku = DB::table('buku')->get();
+        $buku = DB::table('rak_buku')
+            ->join('buku', 'rak_buku.id_buku', '=', 'buku.id')
+            ->join('jenis_buku', 'rak_buku.id_jenis_buku', '=', 'jenis_buku.id')
+            ->get();
         return view('0076buku.index', [
             'buku' => $buku
         ]);
@@ -43,6 +48,13 @@ class BukuController extends Controller
             'judul' => $request->judul,
             'tahun_terbit' => $request->tahun,
         ]);
+        $idbuku = DB::getPdo()->lastInsertId();
+        // $idbuku = Buku::getPdo()->lastInsertId();
+
+        $buku = RakBuku::create([
+            'id_buku' => $idbuku,
+            'id_jenis_buku' => 1,
+        ]);
         return redirect('buku')->with('success', 'Data berhasil disimpan');
     }
 
@@ -56,15 +68,16 @@ class BukuController extends Controller
     {
         $cari = $request->cari;
 
-        // mengambil data dari table pegawai sesuai pencarian data
-        $mahasiswa = DB::table('mahasiswas')
-            ->join('jurusans', 'mahasiswas.idjurusan', '=', 'jurusans.id')
-            ->select('mahasiswas.*', 'jurusans.jurusan')
-            ->where('nama', 'like', "%" . $cari . "%")
+        $buku = DB::table('rak_buku')
+            ->join('buku', 'rak_buku.id_buku', '=', 'buku.id')
+            ->join('jenis_buku', 'rak_buku.id_jenis_buku', '=', 'jenis_buku.id')
+            ->where('buku.judul', 'like', "%" . $cari . "%")
             ->paginate();
 
+        // mengambil data dari table pegawai sesuai pencarian data
+
         // mengirim data pegawai ke view index
-        return view('mahasiswa0076.cari', ['mahasiswa' => $mahasiswa]);
+        return view('0076buku.cari', ['buku' => $buku]);
     }
 
     /**
